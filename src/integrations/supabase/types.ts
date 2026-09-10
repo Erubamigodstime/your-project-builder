@@ -14,7 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      support_tickets: {
+        Row: {
+          attachment_name: string | null
+          attachment_path: string | null
+          attachment_size: number | null
+          created_at: string
+          employee_email: string
+          employee_name: string
+          id: string
+          issue_description: string
+          issue_title: string
+          ticket_reference: string
+          updated_at: string
+        }
+        Insert: {
+          attachment_name?: string | null
+          attachment_path?: string | null
+          attachment_size?: number | null
+          created_at?: string
+          employee_email: string
+          employee_name: string
+          id?: string
+          issue_description: string
+          issue_title: string
+          ticket_reference: string
+          updated_at?: string
+        }
+        Update: {
+          attachment_name?: string | null
+          attachment_path?: string | null
+          attachment_size?: number | null
+          created_at?: string
+          employee_email?: string
+          employee_name?: string
+          id?: string
+          issue_description?: string
+          issue_title?: string
+          ticket_reference?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
