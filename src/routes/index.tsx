@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -23,11 +24,13 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const [submitted, setSubmitted] = useState(false);
+  const [ticketReference, setTicketReference] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
     const form = event.currentTarget;
@@ -35,11 +38,48 @@ function Index() {
       form.reportValidity();
       return;
     }
-    setSubmitted(true);
+
+    setSubmitting(true);
+    const formData = new FormData(form);
+    const ticketReference = `P27-${new Date().toISOString().slice(0, 10).replaceAll("-", "")}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
+    let attachmentPath: string | null = null;
+
+    try {
+      if (file) {
+        const safeFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+        attachmentPath = `${ticketReference}/${crypto.randomUUID()}-${safeFileName}`;
+        const { error: uploadError } = await supabase.storage
+          .from("support-attachments")
+          .upload(attachmentPath, file, { contentType: file.type, upsert: false });
+
+        if (uploadError) throw uploadError;
+      }
+
+      const { error: insertError } = await supabase.from("support_tickets").insert({
+        ticket_reference: ticketReference,
+        employee_name: String(formData.get("employeeName") ?? "").trim(),
+        employee_email: String(formData.get("employeeEmail") ?? "").trim(),
+        issue_title: String(formData.get("issueTitle") ?? "").trim(),
+        issue_description: String(formData.get("issueDescription") ?? "").trim(),
+        attachment_path: attachmentPath,
+        attachment_name: file?.name ?? null,
+        attachment_size: file?.size ?? null,
+      });
+
+      if (insertError) throw insertError;
+      setTicketReference(ticketReference);
+      setSubmitted(true);
+    } catch (submissionError) {
+      console.error("Support ticket submission failed", submissionError);
+      setError("We couldn’t send your request. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const resetForm = () => {
     setSubmitted(false);
+    setTicketReference("");
     setFile(null);
     setError("");
   };
@@ -94,7 +134,7 @@ function Index() {
 
           <section className="animate-rise-in rounded-lg border border-border bg-surface p-6 shadow-[0_20px_60px_-30px_var(--color-primary)] sm:p-9" style={{ animationDelay: "100ms" }}>
             {submitted ? (
-              <Confirmation onReset={resetForm} />
+              <Confirmation onReset={resetForm} ticketReference={ticketReference} />
             ) : (
               <form onSubmit={handleSubmit} noValidate>
                 <div className="mb-8 flex items-start justify-between gap-6 border-b border-border pb-6">
@@ -155,8 +195,8 @@ function Index() {
 
                 <div className="mt-8 flex flex-col-reverse items-stretch justify-between gap-4 border-t border-border pt-6 sm:flex-row sm:items-center">
                   <p className="text-xs leading-5 text-muted-foreground">We’ll use your work email to follow up.</p>
-                  <Button type="submit" size="lg" className="group min-w-44">
-                    Submit request
+                  <Button type="submit" size="lg" className="group min-w-44" disabled={submitting}>
+                    {submitting ? "Sending…" : "Submit request"}
                     <ArrowRight className="transition-transform group-hover:translate-x-0.5" />
                   </Button>
                 </div>
@@ -198,7 +238,7 @@ function SupportPoint({ icon, title, copy }: { icon: React.ReactNode; title: str
   );
 }
 
-function Confirmation({ onReset }: { onReset: () => void }) {
+function Confirmation({ onReset, ticketReference }: { onReset: () => void; ticketReference: string }) {
   return (
     <div className="flex min-h-[560px] flex-col items-center justify-center text-center">
       <div className="animate-check-in flex size-16 items-center justify-center rounded-full bg-success text-success-foreground">
@@ -208,6 +248,9 @@ function Confirmation({ onReset }: { onReset: () => void }) {
       <h2 className="mt-3 max-w-md text-4xl font-semibold leading-tight text-primary">You’re all set.</h2>
       <p className="mt-5 max-w-sm text-base leading-7 text-muted-foreground">
         Your support request has been sent to the System Support team. We’ll follow up by email shortly.
+      </p>
+      <p className="mt-5 rounded-md border border-border bg-surface-raised px-4 py-3 text-sm text-primary">
+        Ticket reference: <span className="font-semibold">{ticketReference}</span>
       </p>
       <Button type="button" variant="outline" className="mt-9" onClick={onReset}>Submit another request</Button>
     </div>
