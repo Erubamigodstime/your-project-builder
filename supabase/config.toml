@@ -1,11 +1,1 @@
 project_id = "zwknnywpaanpxouwhitu"
-# Probe: whether Lovable Cloud applies auth hooks declared here.
-#
-# Supabase documents exactly two ways to register a hook — the dashboard, which
-# Lovable Cloud does not expose, and this file. If this is applied, every access
-# token gains a `lovable_hook_probe` claim and the `hd` enforcement design has
-# its second layer. If it is ignored, that design falls back to the Internal
-# consent screen plus a per-request check.
-[auth.hook.custom_access_token]
-enabled = true
-uri = "pg-functions://postgres/public/custom_access_token_hook"
