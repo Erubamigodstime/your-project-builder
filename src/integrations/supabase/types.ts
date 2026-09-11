@@ -14,6 +14,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      _phase1_probe: {
+        Row: {
+          id: number
+          note: string
+        }
+        Insert: {
+          id: number
+          note: string
+        }
+        Update: {
+          id?: number
+          note?: string
+        }
+        Relationships: []
+      }
       support_tickets: {
         Row: {
           attachment_name: string | null
@@ -61,7 +76,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       [_ in never]: never
