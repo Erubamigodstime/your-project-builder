@@ -22,3 +22,5 @@ cd <repository-name>
 npm i
 npm run dev
 ```
+
+<!-- build control: confirming a pushed commit builds. Safe to delete. -->
