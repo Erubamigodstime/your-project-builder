@@ -14,6 +14,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      _phase1_probe: {
+        Row: {
+          id: number
+          note: string
+        }
+        Insert: {
+          id: number
+          note: string
+        }
+        Update: {
+          id?: number
+          note?: string
+        }
+        Relationships: []
+      }
       support_tickets: {
         Row: {
           attachment_name: string | null
